@@ -29,10 +29,16 @@ pipeline {
 		}
 		stage("Build") {
 			steps {
-				sh "curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh"
-				sh "dep ensure"
-				sh "make"
-				sh "make docker-build"
+			    sh 'mkdir -p ${GOPATH}/src/github.com/kiwigrid/gcp-serviceaccount-controller'
+			    sh 'cp -r ${WORKSPACE}/* ${GOPATH}/src/github.com/kiwigrid/gcp-serviceaccount-controller'
+			    sh 'cp -r ${WORKSPACE}/vendor/* ${GOPATH}/src'
+                sh """
+                    ln -f -s \$WORKSPACE \$GOPATH/src/github.com/kiwigrid/gcp-serviceaccount-controller
+                    go get -u github.com/golang/dep/cmd/dep
+                    cd \$GOPATH/src/github.com/kiwigrid/gcp-serviceaccount-controller
+                    make
+                    make docker-build
+                """
 			}
 		}
 		stage("Publish") {
