@@ -1,0 +1,3 @@
+version: "1"
+domain: kiwigrid.com
+repo: github.com/kiwigrid/gcp-serviceaccount-controller
