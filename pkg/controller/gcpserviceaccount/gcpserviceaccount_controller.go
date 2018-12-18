@@ -137,16 +137,23 @@ func (r *ReconcileGcpServiceAccount) Reconcile(request reconcile.Request) (recon
 	}
 
 	if !ok {
+		r.log.Info("create new service account")
 		account, err := r.GcpService.NewServiceAccount(instance, "")
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+		r.log.Info("service account created")
 		split := strings.Split(account.Name, "/")
 		eMail := split[3]
 
 		instance.Status = gcpv1beta1.GcpServiceAccountStatus{
 			ServiceAccountPath: account.Name,
 			ServiceAccountMail: eMail,
+		}
+
+		err = r.Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
 		}
 	}
 
@@ -170,6 +177,12 @@ func (r *ReconcileGcpServiceAccount) Reconcile(request reconcile.Request) (recon
 			return reconcile.Result{}, err
 		}
 		instance.Status.CredentialKey = key.Name
+		err = r.Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		r.log.Info(fmt.Sprintf("modify secret %s with gcp key %s", instance.Spec.SecretName, key.Name))
+
 		deploy.Name = instance.Spec.SecretName
 		deploy.Namespace = instance.Namespace
 		deploy.Data = map[string][]byte{}
@@ -181,14 +194,15 @@ func (r *ReconcileGcpServiceAccount) Reconcile(request reconcile.Request) (recon
 		}
 
 		//new secret
-		if searchSecretError != nil && errors.IsNotFound(err) {
+		if searchSecretError != nil && errors.IsNotFound(searchSecretError) {
 			r.log.Info("Creating Secret", "secretName", instance.Spec.SecretName, "namespace", instance.Namespace)
 			err = r.Create(context.TODO(), deploy)
 			if err != nil {
-				return reconcile.Result{}, err
+				return reconcile.Result{}, searchSecretError
 			}
-		} else if err != nil {
-			return reconcile.Result{}, err
+			return reconcile.Result{}, nil
+		} else if searchSecretError != nil {
+			return reconcile.Result{}, searchSecretError
 		}
 
 		// Update the found object and write the result back if there are any changes

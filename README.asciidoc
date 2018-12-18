@@ -1,3 +1,24 @@
-== README
+== Gcp Service Account Controller
+
+this controller manges gcp service account over kubernetes resources.
+-
+
+image:https://travis-ci.com/kiwigrid/gcp-serviceaccount-controller.svg?branch=master["Build Status", link="https://travis-ci.com/kiwigrid/gcp-serviceaccount-controller"]
 
 travis tools: https://github.com/IBM/openwhisk-operator
+
+[source,yaml]
+----
+apiVersion: gcp.kiwigrid.com/v1beta1
+kind: GcpServiceAccount
+metadata:
+  name: gcpserviceaccount-sample
+spec:
+  serviceAccountIdentifier: kube-example
+  serviceAccountDescription: kube-example
+  secretName: kube-example-secret
+  bindings:
+  - resource: "//cloudresourcemanager.googleapis.com/projects/<PROJECT_NAME>"
+    roles:
+    - "roles/cloudsql.editor"
+----

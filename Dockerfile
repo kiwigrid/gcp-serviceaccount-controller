@@ -12,6 +12,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager github.com/kiwi
 
 # Copy the controller-manager into a thin image
 FROM alpine:latest
+RUN set -eux; apk add --no-cache ca-certificates gnupg openssl libcap su-exec dumb-init
 WORKDIR /root/
 COPY --from=builder /go/src/github.com/kiwigrid/gcp-serviceaccount-controller/manager .
 ENTRYPOINT ["./manager"]

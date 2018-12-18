@@ -43,7 +43,13 @@ func NewGcpService() *GcpService {
 
 func (s *GcpService) CheckServiceAccountExists(gcpServiceAccount *gcpv1beta1.GcpServiceAccount, project string) (bool, error) {
 	if project == "" {
-		gcpCred, _, _ := gcputil.FindCredentials("", context.TODO(), defaultCloudPlatformScope)
+		gcpCred, _, err := gcputil.FindCredentials("", context.TODO(), defaultCloudPlatformScope)
+		if err != nil {
+			return false, err
+		}
+		if gcpCred == nil {
+			return false, fmt.Errorf("error finding gcp credentials file")
+		}
 		project = gcpCred.ProjectId
 	}
 
@@ -79,6 +85,21 @@ func (s *GcpService) CheckServiceAccountKeyExists(gcpServiceAccount *gcpv1beta1.
 }
 
 func (s *GcpService) CreateServiceAccountKey(gcpServiceAccount *gcpv1beta1.GcpServiceAccount, project string) (*iam.ServiceAccountKey, error) {
+	response, err := s.iamAdmin.Projects.ServiceAccounts.Keys.List(gcpServiceAccount.Status.ServiceAccountPath).Do()
+	if err != nil {
+		return nil, errwrap.Wrapf(fmt.Sprintf("unable to listservice account key for service account '%s': {{err}}", gcpServiceAccount.Status.ServiceAccountPath), err)
+	}
+	if len(response.Keys) > 0 {
+		for _, k := range response.Keys {
+			_, err = s.iamAdmin.Projects.ServiceAccounts.Keys.Delete(k.Name).Do()
+			if err != nil {
+				s.log.Info(fmt.Sprintf("error delete service account key %s (%v)", k.Name, err))
+
+				//return nil, errwrap.Wrapf(fmt.Sprintf("unable to delete service account key %s for service account '%s' %s: {{err}}", k.Name, gcpServiceAccount.Status.ServiceAccountPath,i.Body), err)
+			}
+		}
+	}
+
 	key, err := s.iamAdmin.Projects.ServiceAccounts.Keys.Create(gcpServiceAccount.Status.ServiceAccountPath,
 		&iam.CreateServiceAccountKeyRequest{
 			PrivateKeyType: privateKeyTypeJson,
