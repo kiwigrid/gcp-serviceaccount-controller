@@ -37,5 +37,5 @@ script:
   - IMG=kiwigrid/gcp-serviceaccount-controller:${TRAVIS_BUILD_NUMBER}; make docker-build
   - docker tag kiwigrid/gcp-serviceaccount-controller:${TRAVIS_BUILD_NUMBER} kiwigrid/gcp-serviceaccount-controller:latest
   - echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
-  - docker push kiwigrid/gcp-serviceaccount-controller::${TRAVIS_BUILD_NUMBER}
-  - docker push kiwigrid/gcp-serviceaccount-controller::latest
+  - docker push kiwigrid/gcp-serviceaccount-controller:${TRAVIS_BUILD_NUMBER}
+  - docker push kiwigrid/gcp-serviceaccount-controller:latest
