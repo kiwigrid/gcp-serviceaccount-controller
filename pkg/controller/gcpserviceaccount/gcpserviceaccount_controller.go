@@ -93,7 +93,7 @@ func (r *ReconcileGcpServiceAccount) Reconcile(request reconcile.Request) (recon
 		if errors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
-			r.log.Info("gcp service account deleted", "name", request.NamespacedName, "err", err)
+			r.log.Info("gcp service account deleted", "name", request.NamespacedName)
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -226,10 +226,7 @@ func (r *ReconcileGcpServiceAccount) Reconcile(request reconcile.Request) (recon
 
 func (r *ReconcileGcpServiceAccount) deleteExternalDependency(instance *gcpv1beta1.GcpServiceAccount) error {
 	r.log.Info("deleting the external dependencies")
-
-	//TODO add remove impl
-
-	return nil
+	return r.GcpService.DeleteServiceAccount(instance)
 }
 
 //

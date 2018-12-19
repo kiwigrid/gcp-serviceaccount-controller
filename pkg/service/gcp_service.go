@@ -85,17 +85,15 @@ func (s *GcpService) CheckServiceAccountKeyExists(gcpServiceAccount *gcpv1beta1.
 }
 
 func (s *GcpService) CreateServiceAccountKey(gcpServiceAccount *gcpv1beta1.GcpServiceAccount, project string) (*iam.ServiceAccountKey, error) {
-	response, err := s.iamAdmin.Projects.ServiceAccounts.Keys.List(gcpServiceAccount.Status.ServiceAccountPath).Do()
-	if err != nil {
+	response, err := s.iamAdmin.Projects.ServiceAccounts.Keys.List(gcpServiceAccount.Status.ServiceAccountPath).KeyTypes("USER_MANAGED").Do()
+	if err != nil && !isGoogleApi404Error(err) {
 		return nil, errwrap.Wrapf(fmt.Sprintf("unable to listservice account key for service account '%s': {{err}}", gcpServiceAccount.Status.ServiceAccountPath), err)
 	}
-	if len(response.Keys) > 0 {
+	if response.Keys != nil && len(response.Keys) > 0 {
 		for _, k := range response.Keys {
 			_, err = s.iamAdmin.Projects.ServiceAccounts.Keys.Delete(k.Name).Do()
 			if err != nil {
-				s.log.Info(fmt.Sprintf("error delete service account key %s (%v)", k.Name, err))
-
-				//return nil, errwrap.Wrapf(fmt.Sprintf("unable to delete service account key %s for service account '%s' %s: {{err}}", k.Name, gcpServiceAccount.Status.ServiceAccountPath,i.Body), err)
+				return nil, errwrap.Wrapf(fmt.Sprintf("unable to delete service account key %s for service account '%s': {{err}}", k.Name, gcpServiceAccount.Status.ServiceAccountPath), err)
 			}
 		}
 	}
@@ -174,16 +172,18 @@ func (s *GcpService) NewServiceAccount(gcpServiceAccount *gcpv1beta1.GcpServiceA
 			ServiceAccount: &iam.ServiceAccount{DisplayName: displayName},
 		}).Do()
 
-	/*	key, err := s.iamAdmin.Projects.ServiceAccounts.Keys.Create(rs.AccountId.ResourceName(),
-		&iam.CreateServiceAccountKeyRequest{
-			PrivateKeyType: privateKeyTypeJson,
-		}).Do()*/
-
 	if err != nil {
 		return nil, errwrap.Wrapf(fmt.Sprintf("unable to create new service account under project '%s': {{err}}", projectName), err)
 	}
 
 	return sa, nil
+}
+func (s *GcpService) DeleteServiceAccount(account *gcpv1beta1.GcpServiceAccount) error {
+	lö_, err := s.iamAdmin.Projects.ServiceAccounts.Delete(account.Status.ServiceAccountPath).Do()
+	if err != nil && !isGoogleApi404Error(err) {
+		return err
+	}
+	return nil
 }
 
 func newHttpClient(ctx context.Context, scopes ...string) (*http.Client, error) {
@@ -224,4 +224,15 @@ func roleSetServiceAccountName(rsName string) (name string) {
 		name = fmt.Sprintf("kube%s-%s", rsName[:len(rsName)-toTrunc], intSuffix)
 	}
 	return name
+}
+
+func isGoogleApi404Error(err error) bool {
+	if err == nil {
+		return false
+	}
+	gErr, ok := err.(*googleapi.Error)
+	if ok && gErr.Code == 404 {
+		return true
+	}
+	return false
 }
