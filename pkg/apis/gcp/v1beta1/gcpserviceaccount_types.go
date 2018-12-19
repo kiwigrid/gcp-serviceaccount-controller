@@ -25,9 +25,10 @@ type GcpRoleBindings struct {
 
 // GcpServiceAccountStatus defines the observed state of GcpServiceAccount
 type GcpServiceAccountStatus struct {
-	ServiceAccountPath string `json:"serviceAccountPath,omitempty"`
-	ServiceAccountMail string `json:"serviceAccountMail,omitempty"`
-	CredentialKey      string `json:"credentialKey,omitempty"`
+	ServiceAccountPath     string            `json:"serviceAccountPath,omitempty"`
+	ServiceAccountMail     string            `json:"serviceAccountMail,omitempty"`
+	CredentialKey          string            `json:"credentialKey,omitempty"`
+	AppliedGcpRoleBindings []GcpRoleBindings `json:"appliedBindings,omitempty"`
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }

@@ -123,6 +123,38 @@ func (s *GcpService) HandleAimRoles(gcpServiceAccount *gcpv1beta1.GcpServiceAcco
 
 	iamHandle := iamutil.GetIamHandle(httpC, useragent.String())
 
+	for _, bindings := range gcpServiceAccount.Status.AppliedGcpRoleBindings {
+
+		resource, err := iamResources.Parse(bindings.Resource)
+		if err != nil {
+			return err
+		}
+
+		p, err := iamHandle.GetIamPolicy(context.TODO(), resource)
+		if err != nil {
+			return err
+		}
+
+		roles := util.StringSet{}
+		for _, role := range bindings.Roles {
+			roles.Add(role)
+		}
+
+		changed, newP := p.RemoveBindings(&iamutil.PolicyDelta{
+			Roles: roles,
+			Email: gcpServiceAccount.Status.ServiceAccountMail,
+		})
+		if !changed || newP == nil {
+			s.log.Info("role binding not changed skip", "resource", bindings.Resource)
+			continue
+		}
+
+		if _, err := iamHandle.SetIamPolicy(context.TODO(), resource, newP); err != nil {
+			return err
+		}
+
+	}
+
 	for _, bindings := range gcpServiceAccount.Spec.GcpRoleBindings {
 
 		resource, err := iamResources.Parse(bindings.Resource)
@@ -145,6 +177,7 @@ func (s *GcpService) HandleAimRoles(gcpServiceAccount *gcpv1beta1.GcpServiceAcco
 			Email: gcpServiceAccount.Status.ServiceAccountMail,
 		})
 		if !changed || newP == nil {
+			s.log.Info("role binding not changed skip", "resource", bindings.Resource)
 			continue
 		}
 
@@ -164,7 +197,7 @@ func (s *GcpService) NewServiceAccount(gcpServiceAccount *gcpv1beta1.GcpServiceA
 
 	saEmailPrefix := roleSetServiceAccountName(gcpServiceAccount.Spec.ServiceAccountIdentifier)
 	projectName := fmt.Sprintf("projects/%s", project)
-	displayName := fmt.Sprintf(serviceAccountDisplayNameTmpl, gcpServiceAccount.Spec.ServiceAccountIdentifier)
+	displayName := gcpServiceAccount.Spec.ServiceAccountDescription
 
 	sa, err := s.iamAdmin.Projects.ServiceAccounts.Create(
 		projectName, &iam.CreateServiceAccountRequest{
@@ -178,10 +211,63 @@ func (s *GcpService) NewServiceAccount(gcpServiceAccount *gcpv1beta1.GcpServiceA
 
 	return sa, nil
 }
+
 func (s *GcpService) DeleteServiceAccount(account *gcpv1beta1.GcpServiceAccount) error {
-	lö_, err := s.iamAdmin.Projects.ServiceAccounts.Delete(account.Status.ServiceAccountPath).Do()
+	err := s.removeAimRoleBindings(account, "")
+	if err != nil {
+		return err
+	}
+	_, err = s.iamAdmin.Projects.ServiceAccounts.Delete(account.Status.ServiceAccountPath).Do()
 	if err != nil && !isGoogleApi404Error(err) {
 		return err
+	}
+	return nil
+}
+
+func (s *GcpService) removeAimRoleBindings(gcpServiceAccount *gcpv1beta1.GcpServiceAccount, project string) error {
+
+	if project == "" {
+		gcpCred, _, _ := gcputil.FindCredentials("", context.TODO(), defaultCloudPlatformScope)
+		project = gcpCred.ProjectId
+	}
+
+	iamResources := iamutil.GetEnabledIamResources()
+	httpC, err := newHttpClient(context.TODO(), defaultCloudPlatformScope)
+	if err != nil {
+		return err
+	}
+
+	iamHandle := iamutil.GetIamHandle(httpC, useragent.String())
+
+	for _, bindings := range gcpServiceAccount.Status.AppliedGcpRoleBindings {
+
+		resource, err := iamResources.Parse(bindings.Resource)
+		if err != nil {
+			return err
+		}
+
+		p, err := iamHandle.GetIamPolicy(context.TODO(), resource)
+		if err != nil {
+			return err
+		}
+
+		roles := util.StringSet{}
+		for _, role := range bindings.Roles {
+			roles.Add(role)
+		}
+
+		changed, newP := p.RemoveBindings(&iamutil.PolicyDelta{
+			Roles: roles,
+			Email: gcpServiceAccount.Status.ServiceAccountMail,
+		})
+		if !changed || newP == nil {
+			continue
+		}
+
+		if _, err := iamHandle.SetIamPolicy(context.TODO(), resource, newP); err != nil {
+			return err
+		}
+
 	}
 	return nil
 }
