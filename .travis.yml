@@ -7,7 +7,7 @@ sudo: required
 
 # Force-enable Go modules. This will be unnecessary when Go 1.12 lands.
 env:
-- GO111MODULE=on CHANGE_MINIKUBE_NONE_USER=true INSTALL_K8S_TOOLS=1 RUN_DEP=1 IMG=kiwigird
+- GO111MODULE=on CHANGE_MINIKUBE_NONE_USER=true INSTALL_K8S_TOOLS=1 RUN_DEP=1 IMG=kiwigrid/gcp-serviceaccount-controller
 
 git:
   depth: 1
@@ -33,9 +33,14 @@ before_script:
 # failing test, we want to see both. Configure golangci-lint with a
 # .golangci.yml file at the top level of your repo.
 script:
-  - make       # run a bunch of code checkers/linters in parallel
-  - IMG=kiwigrid/gcp-serviceaccount-controller:${TRAVIS_BUILD_NUMBER}; make docker-build
-  - docker tag kiwigrid/gcp-serviceaccount-controller:${TRAVIS_BUILD_NUMBER} kiwigrid/gcp-serviceaccount-controller:latest
-  - echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
-  - docker push kiwigrid/gcp-serviceaccount-controller:${TRAVIS_BUILD_NUMBER}
-  - docker push kiwigrid/gcp-serviceaccount-controller:latest
+  - make
+
+deploy:
+- provider: script
+  script: bash ./tools/travis/deploy.sh
+  on:
+    branch: master
+- provider: script
+  script: bash ./tools/travis/deploy.sh $TRAVIS_TAG
+  on:
+    tags: true

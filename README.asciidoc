@@ -25,6 +25,8 @@ first you need to create a GCP service account with at least the following permi
 - pubsub.subscriptions.setIamPolicy
 - pubsub.topics.getIamPolicy
 - pubsub.topics.setIamPolicy
+- storage.buckets.getIamPolicy
+- storage.buckets.setIamPolicy
 - resourcemanager.projects.getIamPolicy
 - resourcemanager.projects.setIamPolicy
 ----

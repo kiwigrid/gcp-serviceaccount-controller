@@ -158,11 +158,10 @@ func (r *ReconcileGcpServiceAccount) Reconcile(request reconcile.Request) (recon
 	}
 
 	err = r.GcpService.HandleAimRoles(instance, "")
-	if err == nil {
-		instance.Status.AppliedGcpRoleBindings = instance.Spec.GcpRoleBindings
-	} else {
-		r.log.Info("error handling aim roles", "err", err)
+	if err != nil {
+		return reconcile.Result{}, err
 	}
+	instance.Status.AppliedGcpRoleBindings = instance.Spec.GcpRoleBindings
 
 	ok, err = r.GcpService.CheckServiceAccountKeyExists(instance, "")
 
