@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"os"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -41,7 +42,24 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileGcpServiceAccount{Client: mgr.GetClient(), scheme: mgr.GetScheme(), GcpService: gcpservice.NewGcpService(), log: logf.Log.WithName("gcpserviceaccount-controller")}
+
+	restrictionCheck := false
+	if os.Getenv("DISABLE_RESTRICTION_CHECK") == "true" {
+		restrictionCheck = true
+	}
+
+	client := mgr.GetClient()
+	resolveService := gcpservice.NewRestrictionResolveService(&client)
+	restrictionService := gcpservice.NewRestrictionService(resolveService)
+
+	return &ReconcileGcpServiceAccount{
+		Client:              client,
+		scheme:              mgr.GetScheme(),
+		GcpService:          gcpservice.NewGcpService(),
+		log:                 logf.Log.WithName("gcpserviceaccount-controller"),
+		disableRestrictions: restrictionCheck,
+		restrictionService:  *restrictionService,
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -78,6 +96,8 @@ type ReconcileGcpServiceAccount struct {
 	scheme *runtime.Scheme
 	log    logr.Logger
 	*gcpservice.GcpService
+	restrictionService  gcpservice.RestrictionService
+	disableRestrictions bool
 }
 
 // Reconcile reads that state of the cluster for a GcpServiceAccount object and makes changes based on the state read
@@ -131,6 +151,15 @@ func (r *ReconcileGcpServiceAccount) Reconcile(request reconcile.Request) (recon
 	}
 
 	r.log.Info("Start Reconcile", "resourceName", instance.Name)
+	if !r.disableRestrictions {
+		hasRights, err := r.restrictionService.CheckNamespaceHasRights(instance.Namespace, instance.Spec.GcpRoleBindings)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		if !hasRights {
+			return reconcile.Result{}, fmt.Errorf("not enough rights for namespace %s to create serviceaccount for resource %s", instance.Namespace, instance.Name)
+		}
+	}
 	ok, err := r.GcpService.CheckServiceAccountExists(instance, "")
 	if err != nil {
 		return reconcile.Result{}, err
