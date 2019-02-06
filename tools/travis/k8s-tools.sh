@@ -17,8 +17,6 @@
 
 set -e
 
-GOPATH="$(git rev-parse --show-toplevel):${GOPATH}"
-
 if [ -z "${INSTALL_K8S_TOOLS}" ]; then
     exit 0
 fi
