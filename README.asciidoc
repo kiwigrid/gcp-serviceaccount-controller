@@ -9,6 +9,17 @@ The build tooling for travis is used from https://github.com/IBM/openwhisk-opera
 
 === Helm Deployment
 
+The Helm chart can be found in the Kiwigrid helm repo. Add it via:
+
+----
+helm repo add kiwigrid https://kiwigrid.github.io
+----
+
+The Helm charts source can be found at:
+
+https://github.com/kiwigrid/helm-charts/tree/master/charts/gcp-serviceaccount-controller
+
+
 first you need to create a GCP service account with at least the following permissions:
 
 ----
