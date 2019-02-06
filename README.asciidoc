@@ -7,9 +7,18 @@ this controller manges gcp service account over kubernetes resources.
 
 The build tooling for travis is used from https://github.com/IBM/openwhisk-operator
 
-=== Helm Deployment
+=== Features
 
-first you need to create a GCP service account with at least the following permissions:
+- creates gcp service accounts and creates secrets from the service account keyfile
+- handles the full lifecycle of a service account via CRD
+- keyfiles are only exists inside kubernetes and not saved outside
+- with version 0.2.0 you can restrict enabled roles per namespace via regular expressions (this feature is enabled by default; can be disabled with `DISABLE_RESTRICTION_CHECK`)
+
+
+
+=== Deployment
+
+First you need to create a GCP service account with at least the following permissions:
 
 ----
 - iam.serviceAccounts.create
@@ -31,6 +40,7 @@ first you need to create a GCP service account with at least the following permi
 - resourcemanager.projects.setIamPolicy
 ----
 
+You can use the helm chart to deploy
 Then add the base64 encoded file to the `gcpCredentials` value.
 
 ----
@@ -54,4 +64,41 @@ spec:
   - resource: "//cloudresourcemanager.googleapis.com/projects/<PROJECT_NAME>"
     roles:
     - "roles/cloudsql.editor"
+----
+
+Example for buckets:
+[source,yaml]
+----
+apiVersion: gcp.kiwigrid.com/v1beta1
+kind: GcpServiceAccount
+metadata:
+  name: gcpserviceaccount-bucket-sample
+spec:
+  serviceAccountIdentifier: kube-bucket-example
+  serviceAccountDescription: kube-bucket-example
+  secretName: kube-bucket-example-secret
+  bindings:
+  - resource: buckets/my-bucket-name
+    roles:
+    - roles/storage.objectAdmin
+----
+
+Example for namespace restriction:
+[source,yaml]
+----
+apiVersion: gcp.kiwigrid.com/v1beta1
+kind: GcpNamespaceRestriction
+metadata:
+  labels:
+  name: gcpnamespacerestriction-sample
+spec:
+  namespace: test
+  regex: true
+  restrictions:
+  - resource: "^buckets/my-bucket-name$"
+    roles:
+    - "^roles/storage\.objectAdmin$"
+  - resource: "^pubsub/.*$"
+    roles:
+    - "^roles/.*$"
 ----
