@@ -7,7 +7,7 @@ sudo: required
 
 # Force-enable Go modules. This will be unnecessary when Go 1.12 lands.
 env:
-- GO111MODULE=on CHANGE_MINIKUBE_NONE_USER=true INSTALL_K8S_TOOLS=1 RUN_DEP=1 IMG=kiwigrid/gcp-serviceaccount-controller
+- CHANGE_MINIKUBE_NONE_USER=true INSTALL_K8S_TOOLS=1 RUN_DEP=1 IMG=kiwigrid/gcp-serviceaccount-controller
 
 git:
   depth: 1
