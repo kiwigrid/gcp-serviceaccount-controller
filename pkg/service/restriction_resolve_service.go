@@ -2,6 +2,7 @@ package gcpservice
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-logr/logr"
 	"github.com/kiwigrid/gcp-serviceaccount-controller/pkg/apis/gcp/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,6 +31,10 @@ func (r *RestrictionResolveServiceImpl) CheckNamespaceHasRights(namespace string
 	err := r.List(context.TODO(), &client.ListOptions{}, list)
 	if err != nil {
 		return nil, err
+	}
+	res := findItem(list.Items, namespace)
+	if res == nil {
+		return nil, fmt.Errorf("could not found GcpNamespaceRestriction for namespace %s", namespace)
 	}
 	return findItem(list.Items, namespace), nil
 }
