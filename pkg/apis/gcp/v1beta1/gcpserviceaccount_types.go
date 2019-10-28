@@ -13,7 +13,7 @@ type GcpServiceAccountSpec struct {
 	ServiceAccountIdentifier  string            `json:"serviceAccountIdentifier"`
 	ServiceAccountDescription string            `json:"serviceAccountDescription,omitempty"`
 	SecretName                string            `json:"secretName"`
-	SecretKey                 string            `json:"secretKey:omitempty"`
+	SecretKey                 string            `json:"secretKey,omitempty"`
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
