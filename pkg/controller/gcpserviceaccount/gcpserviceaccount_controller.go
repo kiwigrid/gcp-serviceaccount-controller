@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"os"
+	"reflect"
+	"strings"
+
 	"github.com/go-logr/logr"
 	gcpv1beta1 "github.com/kiwigrid/gcp-serviceaccount-controller/pkg/apis/gcp/v1beta1"
 	"github.com/kiwigrid/gcp-serviceaccount-controller/pkg/service"
@@ -11,8 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -21,7 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"strings"
 )
 
 const (
@@ -216,11 +217,16 @@ func (r *ReconcileGcpServiceAccount) Reconcile(request reconcile.Request) (recon
 		}
 		r.log.Info(fmt.Sprintf("modify secret %s with gcp key %s", instance.Spec.SecretName, key.Name))
 
+		secretKey := instance.Spec.SecretKey
+		if secretKey == "" {
+			secretKey = "credentials.json"
+		}
+
 		deploy.Name = instance.Spec.SecretName
 		deploy.Namespace = instance.Namespace
 		deploy.Data = map[string][]byte{}
 		bytes, err := base64.StdEncoding.DecodeString(key.PrivateKeyData)
-		deploy.Data["credentials.json"] = bytes
+		deploy.Data[secretKey] = bytes
 
 		if err := controllerutil.SetControllerReference(instance, deploy, r.scheme); err != nil {
 			return reconcile.Result{}, err
