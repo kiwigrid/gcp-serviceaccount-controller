@@ -203,8 +203,13 @@ func (r *ReconcileGcpServiceAccount) Reconcile(request reconcile.Request) (recon
 	searchSecretError := r.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.SecretName, Namespace: instance.Namespace}, found)
 	deploy := &corev1.Secret{}
 
+	secretKey := instance.Spec.SecretKey
+	if secretKey == "" {
+		secretKey = "credentials.json"
+	}
+
 	//service account does not exists
-	if !ok || (searchSecretError != nil && errors.IsNotFound(searchSecretError)) || (searchSecretError == nil && len(found.Data["credentials.json"]) == 0) {
+	if !ok || (searchSecretError != nil && errors.IsNotFound(searchSecretError)) || (searchSecretError == nil && len(found.Data[secretKey]) == 0) {
 		r.log.Info(fmt.Sprintf("create or update secret: %s", instance.Spec.SecretName))
 		key, err := r.GcpService.CreateServiceAccountKey(instance, "")
 		if err != nil {
@@ -217,10 +222,7 @@ func (r *ReconcileGcpServiceAccount) Reconcile(request reconcile.Request) (recon
 		}
 		r.log.Info(fmt.Sprintf("modify secret %s with gcp key %s", instance.Spec.SecretName, key.Name))
 
-		secretKey := instance.Spec.SecretKey
-		if secretKey == "" {
-			secretKey = "credentials.json"
-		}
+
 
 		deploy.Name = instance.Spec.SecretName
 		deploy.Namespace = instance.Namespace
