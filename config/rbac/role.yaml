@@ -1,0 +1,48 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - gcp.kiwigrid.com
+  resources:
+  - gcpnamespacerestrictions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - gcp.kiwigrid.com
+  resources:
+  - gcpnamespacerestrictions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - gcp.kiwigrid.com
+  resources:
+  - gcpserviceaccounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - gcp.kiwigrid.com
+  resources:
+  - gcpserviceaccounts/status
+  verbs:
+  - get
+  - patch
+  - update

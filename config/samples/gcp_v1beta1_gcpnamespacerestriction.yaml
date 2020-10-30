@@ -1,15 +1,7 @@
 apiVersion: gcp.kiwigrid.com/v1beta1
 kind: GcpNamespaceRestriction
 metadata:
-  labels:
   name: gcpnamespacerestriction-sample
 spec:
-  namespace: test
-  regex: true
-  restrictions:
-  - resource: "^buckets/my-bucket-name$"
-    roles:
-    - "^roles/storage.objectAdmin$"
-  - resource: "^pubsub/.*$"
-    roles:
-    - "^roles/.*$"
+  # Add fields here
+  foo: bar

@@ -1,0 +1,58 @@
+name: CI build
+
+on: [pull_request]
+
+env:
+  CHANGE_MINIKUBE_NONE_USER: true
+  INSTALL_K8S_TOOLS: 1
+  IMG: kiwigrid/gcp-serviceaccount-controller/operator
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.14
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Get dependencies
+        run: go get -v -t -d ./...
+
+      - name: Build
+        run: make
+
+      - name: Build Docker
+        run: make docker-build
+
+  install-controller:
+    name: install-controller
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    strategy:
+      matrix:
+        k8s:
+          # assume no breaking changes between the version
+          - v1.12.10
+          - v1.17.2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Create kind ${{ matrix.k8s }} cluster
+        uses: engineerd/setup-kind@v0.3.0
+        with:
+          config: .github/kind-config.yaml
+          image: kindest/node:${{ matrix.k8s }}
+      - name: Run tests
+        env:
+          TEST_EXTERNAL_KUBE: true
+        run: |
+          docker pull rabbitmq:3.8-management
+          export KUBECONFIG="$HOME/.kube/config"
+          make test
