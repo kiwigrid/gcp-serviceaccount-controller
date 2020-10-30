@@ -5,6 +5,7 @@ on:
     branches:
       - master
     tags:
+      - '*'
 
 env:
   CHANGE_MINIKUBE_NONE_USER: true
