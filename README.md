@@ -3,10 +3,7 @@
 ![CI build and Deploy](https://github.com/kiwigrid/gcp-serviceaccount-controller/workflows/CI%20build%20and%20Deploy/badge.svg)
 
 this controller manges gcp service account over kubernetes resources.
-
-
-The build tooling for travis is used from https://github.com/IBM/openwhisk-operator
-
+    
 The Helm chart can be found in the Kiwigrid helm repo. Add it via:
 
 ```console

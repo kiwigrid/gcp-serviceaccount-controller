@@ -14,7 +14,7 @@ spec:
     listKind: GcpNamespaceRestrictionList
     plural: gcpnamespacerestrictions
     singular: gcpnamespacerestriction
-  scope: Namespaced
+  scope: Cluster
   validation:
     openAPIV3Schema:
       description: GcpNamespaceRestriction is the Schema for the gcpnamespacerestrictions
