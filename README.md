@@ -1,6 +1,6 @@
-== Gcp Service Account Controller
+# Gcp Service Account Controller
 
-image:https://travis-ci.com/kiwigrid/gcp-serviceaccount-controller.svg?branch=master["Build Status", link="https://travis-ci.com/kiwigrid/gcp-serviceaccount-controller"]
+![CI build and Deploy](https://github.com/kiwigrid/gcp-serviceaccount-controller/workflows/CI%20build%20and%20Deploy/badge.svg)
 
 this controller manges gcp service account over kubernetes resources.
 
@@ -9,16 +9,16 @@ The build tooling for travis is used from https://github.com/IBM/openwhisk-opera
 
 The Helm chart can be found in the Kiwigrid helm repo. Add it via:
 
-----
+```console
 helm repo add kiwigrid https://kiwigrid.github.io
-----
+```
 
 The Helm charts source can be found at:
 
 https://github.com/kiwigrid/helm-charts/tree/master/charts/gcp-serviceaccount-controller
 
 
-=== Features
+## Features
 
 - creates gcp service accounts and creates secrets from the service account keyfile
 - handles the full lifecycle of a service account via CRD
@@ -26,12 +26,12 @@ https://github.com/kiwigrid/helm-charts/tree/master/charts/gcp-serviceaccount-co
 - with version 0.2.0 you can restrict enabled roles per namespace via regular expressions (this feature is enabled by default; can be disabled with `DISABLE_RESTRICTION_CHECK`)
 
 
-=== Deployment
+## Deployment
 
 First you need to create a GCP service account with at least the following permissions:
 
 
-----
+```console
 - iam.serviceAccounts.create
 - iam.serviceAccounts.delete
 - iam.serviceAccounts.get
@@ -49,20 +49,20 @@ First you need to create a GCP service account with at least the following permi
 - storage.buckets.setIamPolicy
 - resourcemanager.projects.getIamPolicy
 - resourcemanager.projects.setIamPolicy
-----
+```
 
 You can use the helm chart to deploy
 Then add the base64 encoded file to the `gcpCredentials` value.
 
-----
+```console
 helm upgrade -i -f <YOUR_VALUES_FILE> <RELEASE_NAME> helm/
-----
+```
 
-=== Example
+## Example
 
 This is an example resource definition for a service account:
-[source,yaml]
-----
+
+```yaml
 apiVersion: gcp.kiwigrid.com/v1beta1
 kind: GcpServiceAccount
 metadata:
@@ -75,11 +75,11 @@ spec:
   - resource: "//cloudresourcemanager.googleapis.com/projects/<PROJECT_NAME>"
     roles:
     - "roles/cloudsql.editor"
-----
+```
 
 Example for buckets:
-[source,yaml]
-----
+
+```yaml
 apiVersion: gcp.kiwigrid.com/v1beta1
 kind: GcpServiceAccount
 metadata:
@@ -92,11 +92,11 @@ spec:
   - resource: buckets/my-bucket-name
     roles:
     - roles/storage.objectAdmin
-----
+```
 
 Example for namespace restriction:
-[source,yaml]
-----
+
+```yaml
 apiVersion: gcp.kiwigrid.com/v1beta1
 kind: GcpNamespaceRestriction
 metadata:
@@ -112,4 +112,4 @@ spec:
   - resource: "^pubsub/.*$"
     roles:
     - "^roles/.*$"
-----
+```

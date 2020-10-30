@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -24,6 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
@@ -53,8 +55,19 @@ var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
 
 	By("bootstrapping test environment")
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+
+	if os.Getenv("TEST_EXTERNAL_KUBE") != "" {
+		existing := true
+		config, _ := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
+		testEnv = &envtest.Environment{
+			CRDDirectoryPaths:  []string{filepath.Join("..", "config", "crd", "bases")},
+			UseExistingCluster: &existing,
+			Config:             config,
+		}
+	} else {
+		testEnv = &envtest.Environment{
+			CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		}
 	}
 
 	var err error

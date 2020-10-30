@@ -1,19 +1,3 @@
-/*
-
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package v1beta1
 
 import (
@@ -25,22 +9,34 @@ import (
 
 // GcpServiceAccountSpec defines the desired state of GcpServiceAccount
 type GcpServiceAccountSpec struct {
+	GcpRoleBindings           []GcpRoleBindings `json:"bindings"`
+	ServiceAccountIdentifier  string            `json:"serviceAccountIdentifier"`
+	ServiceAccountDescription string            `json:"serviceAccountDescription,omitempty"`
+	SecretName                string            `json:"secretName"`
+	SecretKey                 string            `json:"secretKey,omitempty"`
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+}
 
-	// Foo is an example field of GcpServiceAccount. Edit GcpServiceAccount_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+// GcpRoleBindings defines the desired role bindings of GcpServiceAccount
+type GcpRoleBindings struct {
+	Resource string   `json:"resource"`
+	Roles    []string `json:"roles"`
 }
 
 // GcpServiceAccountStatus defines the observed state of GcpServiceAccount
 type GcpServiceAccountStatus struct {
+	ServiceAccountPath     string            `json:"serviceAccountPath,omitempty"`
+	ServiceAccountMail     string            `json:"serviceAccountMail,omitempty"`
+	CredentialKey          string            `json:"credentialKey,omitempty"`
+	AppliedGcpRoleBindings []GcpRoleBindings `json:"appliedBindings,omitempty"`
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +kubebuilder:object:root=true
-
 // GcpServiceAccount is the Schema for the gcpserviceaccounts API
+// +k8s:openapi-gen=true
 type GcpServiceAccount struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -50,7 +46,6 @@ type GcpServiceAccount struct {
 }
 
 // +kubebuilder:object:root=true
-
 // GcpServiceAccountList contains a list of GcpServiceAccount
 type GcpServiceAccountList struct {
 	metav1.TypeMeta `json:",inline"`

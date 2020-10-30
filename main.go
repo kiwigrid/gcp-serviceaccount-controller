@@ -66,26 +66,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.GcpNamespaceRestrictionReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("GcpNamespaceRestriction"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "GcpNamespaceRestriction")
-		os.Exit(1)
+	restrictionCheck := false
+	if os.Getenv("DISABLE_RESTRICTION_CHECK") == "true" {
+		restrictionCheck = true
 	}
-	if err = (&controllers.GcpNamespaceRestrictionReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("GcpNamespaceRestriction"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "GcpNamespaceRestriction")
-		os.Exit(1)
-	}
+
+	resolveService := controllers.NewRestrictionResolveService(mgr.GetClient())
+	restrictionService := controllers.NewRestrictionService(resolveService)
+
 	if err = (&controllers.GcpServiceAccountReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("GcpServiceAccount"),
-		Scheme: mgr.GetScheme(),
+		Client:              mgr.GetClient(),
+		Log:                 ctrl.Log.WithName("controllers").WithName("GcpServiceAccount"),
+		Scheme:              mgr.GetScheme(),
+		GcpService:          controllers.NewGcpService(),
+		DisableRestrictions: restrictionCheck,
+		RestrictionService:  *restrictionService,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GcpServiceAccount")
 		os.Exit(1)
