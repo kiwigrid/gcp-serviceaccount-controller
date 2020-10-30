@@ -1,3 +1,10 @@
-version: "1"
 domain: kiwigrid.com
 repo: github.com/kiwigrid/gcp-serviceaccount-controller
+resources:
+- group: gcp
+  kind: GcpNamespaceRestriction
+  version: v1beta1
+- group: gcp
+  kind: GcpServiceAccount
+  version: v1beta1
+version: "2"
